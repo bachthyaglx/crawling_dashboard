@@ -47,7 +47,7 @@ interface Result {
   external_links: number
   has_login_form: boolean
   status: string
-  broken_links: { url: string; status: number }[]
+  broken_links: { url: string; status_code: number }[]
   created_at: string
 }
 
@@ -244,7 +244,7 @@ const Dashboard: React.FC = () => {
                         {selectedRow.broken_links.map((link, idx) => (
                           <TableRow key={idx}>
                             <TableCell>{link.url}</TableCell>
-                            <TableCell>{link.status}</TableCell>
+                            <TableCell>{link.status_code}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>

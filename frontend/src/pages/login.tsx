@@ -33,7 +33,7 @@ const Login = () => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#f5f5f5',
+        backgroundColor: 'black',
       }}
     >
       <Container maxWidth="xs">

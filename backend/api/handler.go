@@ -2,29 +2,21 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 	"sync"
 	"time"
-	"log"
-	"database/sql"
 
 	"scrawling_dashboard/backend/crawler"
 	"scrawling_dashboard/backend/database"
+	"scrawling_dashboard/backend/models"
 )
 
-type requestPayload struct {
-	URL string `json:"url"`
-}
-
-type BrokenLink struct {
-	URL    string `json:"url"`
-	Status int    `json:"status"` // dùng int vì status thường là số như 404
-}
-
 var (
-	statusMap    = make(map[string]string) // url -> status
+	statusMap    = make(map[string]string)
 	cancelMap    = make(map[string]context.CancelFunc)
 	statusMutex  sync.Mutex
 	crawlQueue   = make([]string, 0)
@@ -35,14 +27,12 @@ func enqueueCrawl(url string) {
 	statusMutex.Lock()
 	defer statusMutex.Unlock()
 
-	// Chỉ thêm nếu chưa có trong hàng đợi hoặc chưa được xử lý
 	if statusMap[url] == "queued" || statusMap[url] == "running" {
 		return
 	}
 	statusMap[url] = "queued"
 	crawlQueue = append(crawlQueue, url)
 
-	// Nếu không có job nào đang chạy, khởi động worker
 	if !crawlRunning {
 		crawlRunning = true
 		go processQueue()
@@ -88,7 +78,6 @@ func processQueue() {
 func URLHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
-		// Nếu bạn định thêm URL mới thì nên gọi hàm xử lý khác ở đây
 		w.WriteHeader(http.StatusCreated)
 	case http.MethodGet:
 		handleGetCrawled(w, r)
@@ -109,22 +98,7 @@ func handleGetCrawled(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	type Result struct {
-		ID            int                    `json:"id"`
-		URL           string                 `json:"url"`
-		HTMLVersion   string                 `json:"html_version"`
-		Title         string                 `json:"title"`
-		Headings      map[string]int         `json:"headings"`
-		InternalLinks int                    `json:"internal_links"`
-		ExternalLinks int                    `json:"external_links"`
-		BrokenLinks   []BrokenLink 					 `json:"broken_links"`		
-		HasLoginForm  bool                   `json:"has_login_form"`
-		Status        string                 `json:"status"`
-		ErrorMessage  string                 `json:"error_message"`
-		CreatedAt     time.Time              `json:"created_at"`
-	}
-
-	var results []Result
+	var results []models.Result
 
 	for rows.Next() {
 		var id int
@@ -133,9 +107,9 @@ func handleGetCrawled(w http.ResponseWriter, r *http.Request) {
 		var headingsJSON, brokenLinksJSON []byte
 		var internal, external int
 		var hasLogin bool
-		var createdAtStr string // 🔧 Thêm dòng này
+		var createdAtStr string
 		var headings map[string]int
-		var brokenLinks []BrokenLink
+		var brokenLinks []models.BrokenLink
 
 		if err := rows.Scan(&id, &url, &htmlVersion, &title, &headingsJSON, &internal,
 			&external, &brokenLinksJSON, &hasLogin, &status, &errorMessage, &createdAtStr); err != nil {
@@ -158,7 +132,7 @@ func handleGetCrawled(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		results = append(results, Result{
+		results = append(results, models.Result{
 			ID:            id,
 			URL:           url,
 			HTMLVersion:   htmlVersion,
@@ -170,12 +144,12 @@ func handleGetCrawled(w http.ResponseWriter, r *http.Request) {
 			HasLoginForm:  hasLogin,
 			Status:        status,
 			ErrorMessage:  errorMessage.String,
-			CreatedAt:     parsedTime, // ✅ Dùng time.Time
+			CreatedAt:     parsedTime,
 		})
 	}
 
 	if results == nil {
-		results = []Result{} // trả về [] thay vì null
+		results = []models.Result{}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -186,7 +160,7 @@ func handleGetCrawled(w http.ResponseWriter, r *http.Request) {
 }
 
 func CrawlHandler(w http.ResponseWriter, r *http.Request) {
-	var payload requestPayload
+	var payload models.RequestPayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil || payload.URL == "" {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
@@ -197,7 +171,7 @@ func CrawlHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func StopHandler(w http.ResponseWriter, r *http.Request) {
-	var payload requestPayload
+	var payload models.RequestPayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil || payload.URL == "" {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
