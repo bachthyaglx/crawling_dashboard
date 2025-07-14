@@ -24,7 +24,7 @@ func main() {
 	http.HandleFunc("/api/login", middleware.WithCORS(api.LoginHandler))
 	http.HandleFunc("/api/logout", middleware.WithCORS(api.LogoutHandler))
 
-	log.Println("✅ Server running at http://localhost:8080")
+	log.Println("Server running at http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 

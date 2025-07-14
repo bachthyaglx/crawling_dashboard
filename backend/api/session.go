@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-// Load secret key từ biến môi trường hoặc fallback mặc định
+// Package api provides session management for the application.
 var store = sessions.NewCookieStore([]byte(getSecret()))
 
 func getSecret() string {
@@ -17,12 +17,12 @@ func getSecret() string {
 	return "super-secret-key"
 }
 
-// Lấy session từ request
+// GetSession retrieves the session for the request
 func GetSession(r *http.Request) (*sessions.Session, error) {
 	return store.Get(r, "auth-session")
 }
 
-// Kiểm tra đã đăng nhập chưa
+// Check authenticated user
 func IsAuthenticated(r *http.Request) bool {
 	session, _ := GetSession(r)
 	auth, ok := session.Values["authenticated"].(bool)

@@ -16,7 +16,7 @@ import (
 	"scrawling_dashboard/backend/models"
 )
 
-// CrawlURLWithContext hỗ trợ dừng giữa chừng với context
+// CrawlURLWithContext crawls a URL and returns the crawl result.
 func CrawlURLWithContext(ctx context.Context, targetURL string) (*models.CrawlResult, error) {
 	cdpCtx, cancel := chromedp.NewContext(ctx)
 	defer cancel()

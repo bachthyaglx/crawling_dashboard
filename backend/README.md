@@ -1,6 +1,6 @@
 ## Scrawling Dashboard - Backend
 
-A lightweight web crawler that extracts information from a given URL, including:
+A web crawler that extracts information from a given URL, including:
 - HTML version
 - Page title
 - Headings count (H1–H6)
@@ -16,8 +16,15 @@ A lightweight web crawler that extracts information from a given URL, including:
 
 ## Run Backend
 
-From the project root:
+Prepare .env file:
+```bash
+MYSQL_DSN=avnadmin:<your-password>@tcp(<your-host>:<your-port>)/?tls=custom
+APP_USERNAME=admin
+APP_PASSWORD=password
+SESSION_SECRET=your_session_secret
+```
 
+From the project root, enter following cmds:
 ```bash
 cd backend
 go run main.go
@@ -25,6 +32,7 @@ go run main.go
 
 ## Check mysql table
 
+Use bash, enter following cmds
 ```bash
 \connect <username>@<host>:<port>
 enter password

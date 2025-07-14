@@ -19,21 +19,19 @@ import (
 var DB *sql.DB
 
 func ConnectMySQL() {
-	dsn := os.Getenv("MYSQL_DSN") // VD: avnadmin:pass@tcp(host:port)/
+	dsn := os.Getenv("MYSQL_DSN")
 
 	if dsn == "" {
 		log.Fatal("MYSQL_DSN is not set")
 	}
 
-	// Đăng ký TLS config nếu cần (Aiven yêu cầu)
 	err := driver.RegisterTLSConfig("custom", &tls.Config{
-		InsecureSkipVerify: true, // ⚠️ chỉ dùng cho dev/test, không nên dùng production
+		InsecureSkipVerify: true, 
 	})
 	if err != nil {
 		log.Fatalf("Failed to register TLS config: %v", err)
 	}
 
-	// Nếu DSN chưa có `tls=` thì thêm vào
 	if !strings.Contains(dsn, "tls=") {
 		if strings.Contains(dsn, "?") {
 			dsn += "&tls=custom"
@@ -42,7 +40,6 @@ func ConnectMySQL() {
 		}
 	}
 
-	// Kết nối ban đầu để tạo DB nếu chưa có
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		log.Fatalf("Error connecting to MySQL: %v", err)
@@ -54,7 +51,6 @@ func ConnectMySQL() {
 		log.Fatalf("Failed to create database: %v", err)
 	}
 
-	// Thêm tên DB vào DSN
 	dsnWithDB := strings.Split(dsn, "?")[0] + "scrawling_db"
 	if strings.Contains(dsn, "?") {
 		dsnWithDB += "?" + strings.Split(dsn, "?")[1]
@@ -69,7 +65,7 @@ func ConnectMySQL() {
 		log.Fatalf("MySQL ping failed: %v", err)
 	}
 
-	fmt.Println("✅ Connected to MySQL successfully")
+	fmt.Println("Connected to MySQL successfully")
 
 	createTable := `
 	CREATE TABLE IF NOT EXISTS urls (
@@ -117,5 +113,12 @@ func InsertCrawlResult(result *models.CrawlResult) error {
 		"",
 		time.Now(),
 	)
+	return err
+}
+
+// UpdateCrawlStatus updates the status of a URL in the database
+func UpdateCrawlStatus(url, status string) error {
+	query := `UPDATE urls SET status = ? WHERE url = ?`
+	_, err := DB.Exec(query, status, url)
 	return err
 }
