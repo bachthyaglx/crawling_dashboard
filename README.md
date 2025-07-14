@@ -57,10 +57,6 @@ No issues found.
 
 ## Test mysql data from backend side
 
-Test a post request
-
-![alt text](image.png)
-
 Check mysql data
 ```bash
 \connect <username>@<host>:<port>
